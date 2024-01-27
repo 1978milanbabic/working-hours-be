@@ -26,4 +26,4 @@ dist-ssr
 .env.local
 
 # db file
-db/*
+db/**.json
