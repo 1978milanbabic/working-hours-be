@@ -1,0 +1,13 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnPaste": true,
+  "html.format.wrapLineLength": 250,
+  "prettier.printWidth": 150,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "prettier.tabWidth": 2,
+  "prettier.semi": false,
+  "prettier.singleQuote": true,
+}
