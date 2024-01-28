@@ -73,27 +73,43 @@ app.post('/api/upsert-defaults', (req, res) => {
     }
     let defaults = value
     // set or update day event
+    let dayEvent = params.formData
+    // calculate sum time
+    const { uhours, umins, eshours, esmins } = dayEvent
+    let time = 0
+    let estTime = 0
+    if (uhours) time += 60 * uhours
+    if (umins) time += umins
+    if (eshours) estTime += 60 * eshours
+    if (esmins) estTime += esmins
+    dayEvent.time = time
+    dayEvent.estTime = estTime
     if (!params.eventID) {
-      // set
-      let dayEvent = params.formData
+      // set new
       // add new id
       dayEvent.eventID = uuidv4()
-      // calculate sum time
-      const { uhours, umins, eshours, esmins } = dayEvent
-      let time = 0
-      let estTime = 0
-      if (uhours) time += 60 * uhours
-      if (umins) time += umins
-      if (eshours) estTime += 60 * eshours
-      if (esmins) estTime += esmins
-      dayEvent.time = time
-      dayEvent.estTime = estTime
       // push new event & update DB
       defaults[parseInt(params.selectedDayForModal)].push(dayEvent)
       db.setInfo('schedules', defaults)
-      res.json({ status: 'ok' })
+      res.json({ status: 'created' })
     } else {
       // update
+      let { eventID } = params
+      let newDefaults = defaults.map((d, index) => {
+        if (parseInt(params.selectedDayForModal) === index) {
+          return d.map((ev) => {
+            if (ev.eventID === eventID) {
+              return dayEvent
+            } else {
+              return ev
+            }
+          })
+        } else {
+          return d
+        }
+      })
+      db.setInfo('schedules', newDefaults)
+      res.json({ status: 'edited' })
     }
   })
 })
