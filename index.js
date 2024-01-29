@@ -3,6 +3,7 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 const TinyDB = require('tinydb')
 const { v4: uuidv4 } = require('uuid')
+const axios = require('axios')
 require('dotenv').config()
 
 const { getUser, getClients, getRecordings } = require('./apiCalls.js')
@@ -16,18 +17,6 @@ app.use(cors())
 app.use(bodyParser.json())
 
 // **** API routes ****
-app.get('/api/todos', (req, res) => {
-  const todos = db.getInfo('todos') || []
-  res.json(todos)
-})
-
-app.post('/api/todos', (req, res) => {
-  const newTodo = req.body
-  const todos = db.getInfo('todos') || []
-  todos.push(newTodo)
-  db.setInfo('todos', todos)
-  res.json(newTodo)
-})
 
 // format DB -> get & store vals on login
 app.post('/api/format', async (req, res) => {
@@ -60,6 +49,20 @@ app.get('/api/clients', async (req, res) => {
       return
     }
     res.json({ clients: value })
+  })
+})
+// ** one day schedule **
+// get one default
+app.get('/api/default/:day', (req, res) => {
+  const params = req?.params
+  let day = parseInt(params.day)
+  db.getInfo('schedules', (err, key, value) => {
+    if (err) {
+      console.log(err)
+      return
+    }
+    let returnDay = value[day]
+    res.json({ returnDay })
   })
 })
 // upsert one default
@@ -113,19 +116,6 @@ app.post('/api/upsert-defaults', (req, res) => {
     }
   })
 })
-// get one default
-app.get('/api/default/:day', (req, res) => {
-  const params = req?.params
-  let day = parseInt(params.day)
-  db.getInfo('schedules', (err, key, value) => {
-    if (err) {
-      console.log(err)
-      return
-    }
-    let returnDay = value[day]
-    res.json({ returnDay })
-  })
-})
 // remove one default
 app.patch('/api/default', (req, res) => {
   const params = req?.body
@@ -146,6 +136,35 @@ app.patch('/api/default', (req, res) => {
     db.setInfo('schedules', newDefaults)
     res.json(req.body)
   })
+})
+// get all defaults
+app.get('/api/defaults', (req, res) => {
+  db.getInfo('schedules', (err, key, value) => {
+    if (err) {
+      console.log(err)
+      return
+    }
+    let schedules = value
+    res.json({ schedules })
+  })
+})
+// submit all for one day
+app.post('/api/create-day-entrance', async (req, res) => {
+  let params = req?.body
+  const { token, sendObj } = params
+  if (params) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    // set user
+    try {
+      let setData = await axios.post(`${process.env.API_URL}/${process.env.PUT_RECORDING_PATH}`, { ...sendObj })
+      if (setData?.data) {
+        return res.json(setData.data)
+      } else console.log('error')
+    } catch (err) {
+      console.log(err)
+      res.json({ status: 'failed' })
+    }
+  }
 })
 
 // test DB
